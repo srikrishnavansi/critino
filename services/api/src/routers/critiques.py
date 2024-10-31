@@ -131,8 +131,8 @@ async def list_critiques(
         return GetCritiquesResult(
             data=[
                 StrippedCritique(
-                    optimal=critique["optimal"],
-                    instructions=critique["instructions"],
+                    optimal=critique["optimal"] if not None else "",
+                    instructions=critique["instructions"] if not None else "",
                     query=critique["query"],
                     context=critique["context"],
                 )
@@ -143,8 +143,8 @@ async def list_critiques(
 
     critiques = [
         StrippedCritique(
-            optimal=critique["optimal"],
-            instructions=critique["instructions"],
+            optimal=critique["optimal"] if not None else "",
+            instructions=critique["instructions"] if not None else "",
             query=critique["query"],
             context=critique["context"],
         )
@@ -184,6 +184,12 @@ async def upsert(
     query: Annotated[PostCritiquesQuery, Depends(PostCritiquesQuery)],
     x_critino_key: Annotated[str, Header()],
 ) -> PostCritiquesResponse:
+
+    if body.instructions is None:
+        body.instructions = ""
+    if body.optimal is None:
+        body.optimal = ""
+
     supabase = db.client()
 
     auth.authenticate_team_or_environment(
