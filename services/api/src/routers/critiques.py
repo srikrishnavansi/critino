@@ -200,7 +200,7 @@ def populate_missing(body: PostCritiquesBody, model: ChatOpenAI):
         agent.invoke(
             f"You revise critiques and populate the missing properties inferring them from the current.\n\n"
             f"Fields and context:\n{body.model_dump_json(indent=4)}\n\n"
-            f"Please populate the missing fields."
+            f"Please populate the missing fields. DO NOT REPLACE FIELDS ALREADY FILLED IN, THOSE ARE SET IN STONE AS OPTIMAL, USE THOSE TO INSPIRE AND INFER THE MISSING FIELDS."
         ),
     )
 
