@@ -188,9 +188,11 @@ def populate_missing(body: PostCritiquesBody, model: ChatOpenAI):
         chain_of_thought: str = Field(
             description="This is your reasoning, use it to evaluate the current information given. Especially the context and original response 'response'. Evaluate how the response was optimized 'optimal'. Always start this field with `Let's think step by step. `"
         )
-        optimal: str = Field(description="The pure optimal response.")
-        instructions: str = Field(
-            description="The pure tailored instructions for this situation."
+        optimal: str | None = Field(
+            description="The pure optimal response. ONLY SET IF 'optimal' IS NOT PRESENT IN YOUR FIELDS AND CONTEXT"
+        )
+        instructions: str | None = Field(
+            description="The pure tailored instructions for this situation. ONLY SET IF 'optimal' IS NOT PRESENT IN YOUR FIELDS AND CONTEXT"
         )
 
     agent = model.with_structured_output(Populate)
@@ -206,8 +208,10 @@ def populate_missing(body: PostCritiquesBody, model: ChatOpenAI):
 
     print("REUSTTT", result)
 
-    body.instructions = result.instructions
-    body.optimal = result.optimal
+    body.instructions = (
+        result.instructions if result.instructions else body.instructions
+    )
+    body.optimal = result.optimal if result.optimal else body.instructions
 
     return body
 
