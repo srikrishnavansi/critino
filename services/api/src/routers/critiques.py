@@ -1,11 +1,13 @@
+import json
 import traceback
 import logging
 from functools import wraps
-import os
-from typing import Annotated
+from typing import Annotated, Literal, cast
 import urllib.parse
-from pydantic import BaseModel, AfterValidator
-from src.interfaces import db
+import uuid
+from langchain_openai.chat_models import ChatOpenAI
+from pydantic import BaseModel, AfterValidator, Field
+from src.interfaces import db, llm
 from src.lib.url_utils import get_url, sluggify
 from supabase import PostgrestAPIError
 
@@ -161,6 +163,7 @@ class PostCritiquesQuery(BaseModel):
     environment_name: Annotated[str, AfterValidator(vd.str_empty)]
     workflow_name: Annotated[str, AfterValidator(vd.str_empty)]
     agent_name: Annotated[str, AfterValidator(vd.str_empty)]
+    populate_missing: bool = False
 
 
 class PostCritiquesBody(BaseModel):
@@ -176,6 +179,39 @@ class PostCritiquesResponse(BaseModel):
     data: dict
 
 
+def populate_missing(body: PostCritiquesBody, model: ChatOpenAI):
+    if body.optimal != "" and body.instructions != "":
+        # nothing to populate
+        return body
+
+    class Populate(BaseModel):
+        chain_of_thought: str = Field(
+            description="This is your reasoning, use it to evaluate the current information given. Especially the context and original response 'response'. Evaluate how the response was optimized 'optimal'. Always start this field with `Let's think step by step. `"
+        )
+        optimal: str = Field(description="The pure optimal response.")
+        instructions: str = Field(
+            description="The pure tailored instructions for this situation."
+        )
+
+    agent = model.with_structured_output(Populate)
+
+    result = cast(
+        Populate,
+        agent.invoke(
+            f"You revise critiques and populate the missing properties inferring them from the current.\n\n"
+            f"Fields and context:\n{body.model_dump_json(indent=4)}\n\n"
+            f"Please populate the missing fields."
+        ),
+    )
+
+    print("REUSTTT", result)
+
+    body.instructions = result.instructions
+    body.optimal = result.optimal
+
+    return body
+
+
 @router.post("/{id}")
 @ahandle_error
 async def upsert(
@@ -183,12 +219,33 @@ async def upsert(
     body: PostCritiquesBody,
     query: Annotated[PostCritiquesQuery, Depends(PostCritiquesQuery)],
     x_critino_key: Annotated[str, Header()],
+    x_openrouter_api_key: Annotated[str | None, Header()],
 ) -> PostCritiquesResponse:
 
     if body.instructions is None:
         body.instructions = ""
     if body.optimal is None:
         body.optimal = ""
+
+    if query.populate_missing:
+        if body.optimal == "" and body.instructions == "":
+            raise HTTPException(
+                status_code=400,
+                detail="both 'optimal' and 'instructions' cannot be empty when 'populate_missing' is true.",
+            )
+
+        if x_openrouter_api_key is None:
+            raise HTTPException(
+                status_code=400,
+                detail="'populate_missing' is true but missing 'x_openrouter_api_key' header.",
+            )
+
+        model = llm.chat_open_router(
+            model="anthropic/claude-3.5-sonnet:beta",
+            api_key=x_openrouter_api_key,
+        )
+
+        body = populate_missing(body, model)
 
     supabase = db.client()
 
