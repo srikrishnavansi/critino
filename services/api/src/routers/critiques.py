@@ -245,7 +245,7 @@ async def upsert(
             )
 
         model = llm.chat_open_router(
-            model="anthropic/claude-3.5-sonnet:beta",
+            model="anthropic/claude-3-5-haiku-20241022:beta",
             api_key=x_openrouter_api_key,
         )
 
