@@ -55,6 +55,7 @@ export type Database = {
           optimal: string
           query: string
           response: string
+          situation: string
           tags: string[]
           team_name: string
           workflow_name: string
@@ -69,6 +70,7 @@ export type Database = {
           optimal?: string
           query?: string
           response?: string
+          situation?: string
           tags?: string[]
           team_name: string
           workflow_name: string
@@ -83,6 +85,7 @@ export type Database = {
           optimal?: string
           query?: string
           response?: string
+          situation?: string
           tags?: string[]
           team_name?: string
           workflow_name?: string

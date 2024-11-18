@@ -65,6 +65,10 @@
 			header: 'Tailored Instructions',
 		}),
 		table.column({
+			accessor: 'situation',
+			header: 'Situation',
+		}),
+		table.column({
 			accessor: 'response',
 			header: 'Original Response',
 		}),
