@@ -2,17 +2,18 @@ import json
 import traceback
 import logging
 from functools import wraps
-from typing import Annotated, Literal, cast
+from typing import Annotated, cast
 import urllib.parse
-import uuid
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_openai.chat_models import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from pydantic import BaseModel, AfterValidator, Field
 from src.interfaces import db, llm
 from src.lib.url_utils import get_url, sluggify
 from supabase import PostgrestAPIError
 
 from fastapi import APIRouter, Depends, HTTPException, Header
-from src.lib import auth, keys, validators as vd
+from src.lib import auth, validators as vd
 
 from src.lib.few_shot import (
     find_relevant_critiques,
@@ -184,12 +185,12 @@ class FilledBody(PostCritiquesBody):
 
 
 def generate_Fields(
-    query: PostCritiquesQuery, body: PostCritiquesBody, model: ChatOpenAI
+    query: PostCritiquesQuery,
+    body: PostCritiquesBody,
+    model: ChatOpenAI,
+    attempts: int = 3,
+    messages: list[BaseMessage] = [],
 ) -> FilledBody:
-    if body.optimal != "" and body.instructions != "":
-        # nothing to populate
-        return body
-
     class Populate(BaseModel):
         situation: str = Field(
             description="A ~10 word description of the situation from the context and query. The situation should be generic such that it's similarly worded to others since it's used for similarity search."
@@ -204,24 +205,30 @@ def generate_Fields(
             description="The pure tailored instructions for this situation. ONLY SET IF 'optimal' IS NOT PRESENT IN YOUR FIELDS AND CONTEXT"
         )
 
-    agent = model.with_structured_output(Populate)
+    prompt = ChatPromptTemplate(
+        [
+            SystemMessage(
+                content="""
+You revise critiques and populate the missing properties inferring them from the current.
+Please populate the missing fields.
+DO NOT REPLACE FIELDS ALREADY FILLED IN, THOSE ARE SET IN STONE AS OPTIMAL, USE THOSE TO INSPIRE AND INFER THE MISSING FIELDS.
+        """
+            ),
+            HumanMessage(
+                content=f"""
+Fields and context:
+{body.model_dump_json(indent=4)}
 
-    result = cast(
-        Populate,
-        agent.invoke(
-            f"You revise critiques and populate the missing properties inferring them from the current.\n\n"
-            f"Fields and context:\n{body.model_dump_json(indent=4)}\n\n"
-            f"Please populate the missing fields. DO NOT REPLACE FIELDS ALREADY FILLED IN, THOSE ARE SET IN STONE AS OPTIMAL, USE THOSE TO INSPIRE AND INFER THE MISSING FIELDS."
-        ),
+Please deduce the missing fields.
+Do NOT change the fields already present.
+If optimal is present, that is the **optimal** you're aiming for.
+        """
+            ),
+            MessagesPlaceholder("msgs"),
+        ]
     )
 
-    print("REUSTTT", result)
-
-    if query.populate_missing:
-        body.instructions = (
-            result.instructions if result.instructions else body.instructions
-        )
-        body.optimal = result.optimal if result.optimal else body.instructions
+    agent = model.with_structured_output(Populate)
 
     filled_body = FilledBody(
         query=body.query,
@@ -229,9 +236,51 @@ def generate_Fields(
         response=body.response,
         optimal=body.optimal,
         instructions=body.instructions,
-        situation=result.situation,
+        situation="",
     )
 
+    for attempt in range(attempts):
+        result = cast(
+            Populate,
+            agent.invoke(prompt.invoke({"msgs": messages})),
+        )
+        if (body.instructions != "" and result.instructions != body.instructions) or (
+            body.optimal != "" and result.optimal != body.optimal
+        ):
+            messages.append(
+                AIMessage(name="populator", content=result.model_dump_json(indent=4))
+            )
+            messages.append(
+                HumanMessage(
+                    content="You did not properly populate the missing fields. You changed an existing field. DO NOT CHANGE EXISTING FIELDS, THOSE ARE ALREADY PERFECT."
+                )
+            )
+            continue
+
+        if query.populate_missing:
+            body.instructions = (
+                result.instructions if result.instructions else body.instructions
+            )
+            body.optimal = result.optimal if result.optimal else body.instructions
+
+        filled_body = FilledBody(
+            query=body.query,
+            context=body.context,
+            response=body.response,
+            optimal=body.optimal,
+            instructions=body.instructions,
+            situation=result.situation,
+        )
+
+        logging.info(
+            f"critiques: generate_fields: attempt {attempt + 1}: (situation: {result.situation}, instructions: {result.instructions}, optimal: {result.optimal})"
+        )
+
+        return filled_body
+
+    logging.error(
+        "critiques: generate_fields: all attempts at populating fields failed to do so appropriately"
+    )
     return filled_body
 
 
