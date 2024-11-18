@@ -179,12 +179,21 @@ class PostCritiquesResponse(BaseModel):
     data: dict
 
 
-def populate_missing(body: PostCritiquesBody, model: ChatOpenAI):
+class FilledBody(PostCritiquesBody):
+    situation: str = ""
+
+
+def generate_Fields(
+    query: PostCritiquesQuery, body: PostCritiquesBody, model: ChatOpenAI
+) -> FilledBody:
     if body.optimal != "" and body.instructions != "":
         # nothing to populate
         return body
 
     class Populate(BaseModel):
+        situation: str = Field(
+            description="A ~10 word description of the situation from the context and query. The situation should be generic such that it's similarly worded to others since it's used for similarity search."
+        )
         chain_of_thought: str = Field(
             description="This is your reasoning, use it to evaluate the current information given. Especially the context and original response 'response'. Evaluate how the response was optimized 'optimal'. Always start this field with `Let's think step by step. `"
         )
@@ -208,12 +217,22 @@ def populate_missing(body: PostCritiquesBody, model: ChatOpenAI):
 
     print("REUSTTT", result)
 
-    body.instructions = (
-        result.instructions if result.instructions else body.instructions
-    )
-    body.optimal = result.optimal if result.optimal else body.instructions
+    if query.populate_missing:
+        body.instructions = (
+            result.instructions if result.instructions else body.instructions
+        )
+        body.optimal = result.optimal if result.optimal else body.instructions
 
-    return body
+    filled_body = FilledBody(
+        query=body.query,
+        context=body.context,
+        response=body.response,
+        optimal=body.optimal,
+        instructions=body.instructions,
+        situation=result.situation,
+    )
+
+    return filled_body
 
 
 @router.post("/{id}")
@@ -231,25 +250,27 @@ async def upsert(
     if body.optimal is None:
         body.optimal = ""
 
-    if query.populate_missing:
-        if body.optimal == "" and body.instructions == "":
-            raise HTTPException(
-                status_code=400,
-                detail="both 'optimal' and 'instructions' cannot be empty when 'populate_missing' is true.",
-            )
-
-        if x_openrouter_api_key is None:
-            raise HTTPException(
-                status_code=400,
-                detail="'populate_missing' is true but missing 'x_openrouter_api_key' header.",
-            )
-
-        model = llm.chat_open_router(
+    model = (
+        llm.chat_open_router(
             model="anthropic/claude-3-5-haiku-20241022:beta",
             api_key=x_openrouter_api_key,
         )
+        if x_openrouter_api_key
+        else None
+    )
 
-        body = populate_missing(body, model)
+    if body.optimal == "" and body.instructions == "" and query.populate_missing:
+        raise HTTPException(
+            status_code=400,
+            detail="both 'optimal' and 'instructions' cannot be empty when 'populate_missing' is true.",
+        )
+    if query.populate_missing and model is None:
+        raise HTTPException(
+            status_code=400,
+            detail="'populate_missing' is true but no model is available to populate the fields.",
+        )
+
+    filled_body = generate_Fields(query, body, model) if model else None
 
     supabase = db.client()
 
@@ -296,7 +317,7 @@ async def upsert(
                     "workflow_name": query.workflow_name,
                     "agent_name": query.agent_name,
                     "id": id,
-                    **body.model_dump(),
+                    **(filled_body.model_dump() if filled_body else body.model_dump()),
                 }
             )
             .execute()
