@@ -365,7 +365,9 @@ async def upsert(
     x_critino_key: Annotated[str, Header()],
     x_openrouter_api_key: Annotated[str | None, Header()],
 ) -> PostCritiquesResponse:
-
+    logging.info(
+        f"upsert: id: {id}, body: {body}, query: {query}, x_critino_key: {x_critino_key}, x_openrouter_api_key: {x_openrouter_api_key}"
+    )
     if body.instructions is None:
         body.instructions = ""
     if body.optimal is None:
