@@ -280,7 +280,7 @@ def generate_fields(
             description="The pure optimal response. ONLY SET IF 'optimal' IS NOT PRESENT IN YOUR FIELDS AND CONTEXT"
         )
         instructions: str = Field(
-            description="The pure tailored instructions for this situation. ONLY SET IF 'optimal' IS NOT PRESENT IN YOUR FIELDS AND CONTEXT"
+            description="The pure tailored instructions for achieving a response similar or like the same as the optimal response, only provide instructions on how to achive the optimal response, don't provide your own instructions. ONLY SET IF 'optimal' IS NOT PRESENT IN YOUR FIELDS AND CONTEXT"
         )
 
     prompt = ChatPromptTemplate(
