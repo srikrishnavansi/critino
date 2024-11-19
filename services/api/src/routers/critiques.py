@@ -335,6 +335,19 @@ If optimal is present, that is the **optimal** you're aiming for.
                 result.optimal if result.optimal else filled_body.instructions
             )
 
+            if filled_body.instructions == "" or filled_body.optimal == "":
+                messages.append(
+                    AIMessage(
+                        name="populator", content=result.model_dump_json(indent=4)
+                    )
+                )
+                messages.append(
+                    HumanMessage(
+                        content="You did not properly populate the missing fields. You did not populate a missing field. DO NOT CHANGE EXISTING FIELDS, THOSE ARE ALREADY PERFECT."
+                    )
+                )
+                continue
+
         filled_body = FilledBody(
             query=filled_body.query,
             context=filled_body.context,
