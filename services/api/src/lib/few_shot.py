@@ -17,7 +17,7 @@ class StrippedCritique(BaseModel):
     instructions: str
 
 
-SimilarityKey = Literal["query"] | Literal["situation"] | Literal["context"]
+SimilarityKey = Literal["query", "situation", "context"]
 
 
 def find_relevant_critiques(
