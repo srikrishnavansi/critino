@@ -274,7 +274,7 @@ def generate_fields(
 
     class Populate(BaseModel):
         chain_of_thought: str = Field(
-            description="This is your reasoning, use it to evaluate the current information given. Especially the context and original response 'response'. Evaluate how the response was optimized 'optimal'. Always start this field with `Let's think step by step. `"
+            description="This is your reasoning, use it to evaluate the current information given. Especially the context and original response 'response'. Evaluate how the response was optimized 'optimal'. Then make sure to evaluate how to create instructions on how to achieve the 'optimal' answer. Always start this field with `Let's think step by step. `"
         )
         optimal: str = Field(
             description="DO NOT LEAVE EMPTY. The pure optimal response."
