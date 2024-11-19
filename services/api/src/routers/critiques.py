@@ -252,7 +252,7 @@ class FilledBody(PostCritiquesBody):
     situation: str = ""
 
 
-def generate_Fields(
+def generate_fields(
     query: PostCritiquesQuery,
     body: PostCritiquesBody,
     model: ChatOpenAI,
@@ -276,10 +276,10 @@ def generate_Fields(
         chain_of_thought: str = Field(
             description="This is your reasoning, use it to evaluate the current information given. Especially the context and original response 'response'. Evaluate how the response was optimized 'optimal'. Always start this field with `Let's think step by step. `"
         )
-        optimal: str | None = Field(
+        optimal: str = Field(
             description="The pure optimal response. ONLY SET IF 'optimal' IS NOT PRESENT IN YOUR FIELDS AND CONTEXT"
         )
-        instructions: str | None = Field(
+        instructions: str = Field(
             description="The pure tailored instructions for this situation. ONLY SET IF 'optimal' IS NOT PRESENT IN YOUR FIELDS AND CONTEXT"
         )
 
@@ -391,7 +391,7 @@ async def upsert(
             detail="'populate_missing' is true but no model is available to populate the fields.",
         )
 
-    filled_body = generate_Fields(query, body, model) if model else None
+    filled_body = generate_fields(query, body, model) if model else None
 
     supabase = db.client()
 
