@@ -111,6 +111,7 @@ class GetCritiquesQuery(BaseModel):
 
 
 class GetCritiquesResult(BaseModel):
+    situation: str | None = None
     data: list[StrippedCritique]
     count: int
 
@@ -174,6 +175,7 @@ async def list_critiques(
                     instructions=critique["instructions"] if not None else "",
                     query=critique["query"],
                     context=critique["context"],
+                    situation=critique["situation"],
                 )
                 for critique in response.data
             ],
@@ -186,6 +188,7 @@ async def list_critiques(
             instructions=critique["instructions"] if not None else "",
             query=critique["query"],
             context=critique["context"],
+            situation=critique["situation"],
         )
         for critique in response.data
     ]
@@ -214,7 +217,7 @@ async def list_critiques(
         )
 
         return GetCritiquesResult(
-            data=relevant_critiques, count=len(relevant_critiques)
+            situation=situation, data=relevant_critiques, count=len(relevant_critiques)
         )
 
     relevant_critiques = find_relevant_critiques(

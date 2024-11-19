@@ -15,6 +15,7 @@ class StrippedCritique(BaseModel):
     query: str
     optimal: str
     instructions: str
+    situation: str
 
 
 SimilarityKey = Literal["query", "situation", "context"]
