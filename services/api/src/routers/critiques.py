@@ -277,10 +277,10 @@ def generate_fields(
             description="This is your reasoning, use it to evaluate the current information given. Especially the context and original response 'response'. Evaluate how the response was optimized 'optimal'. Always start this field with `Let's think step by step. `"
         )
         optimal: str = Field(
-            description="The pure optimal response. ONLY SET IF 'optimal' IS NOT PRESENT IN YOUR FIELDS AND CONTEXT"
+            description="DO NOT LEAVE EMPTY. The pure optimal response."
         )
         instructions: str = Field(
-            description="The pure tailored instructions for achieving a response similar or like the same as the optimal response, only provide instructions on how to achive the optimal response, don't provide your own instructions. ONLY SET IF 'optimal' IS NOT PRESENT IN YOUR FIELDS AND CONTEXT"
+            description="DO NOT LEAVE EMPTY. The pure tailored instructions for achieving a response similar or like the same as the optimal response, only provide instructions on how to achive the optimal response, don't provide your own instructions."
         )
 
     prompt = ChatPromptTemplate(
