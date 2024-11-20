@@ -192,7 +192,9 @@ async def list_critiques(
             )
 
         context = query.context + "\n" if query.context else "" + query.query
+        logging.info(f"generate_fields: Generated context: {context}")
         situation = generate_situation(model, context)
+        logging.info(f"generate_fields: Generated situation: {situation}")
 
         relevant_critiques = find_relevant_critiques(
             critiques, situation, k=query.k, similarity_key=query.similarity_key
@@ -239,10 +241,16 @@ def generate_fields(
     attempts: int = 3,
     messages: list[BaseMessage] = [],
 ) -> FilledBody:
+    logging.info(
+        f"generate_fields: Starting to generate fields for query: {query}, body: {body}"
+    )
     context = (body.context + "\n" if body.context else "") + (
         body.query if body.query else ""
     )
     situation = generate_situation(model, context)
+    logging.info(
+        f"generate_fields: Successfully populated fields on attempt {attempt + 1}"
+    )
     filled_body = FilledBody(
         query=body.query,
         context=body.context,
@@ -251,6 +259,8 @@ def generate_fields(
         instructions=body.instructions,
         situation=situation,
     )
+
+    logging.info(f"generate_fields: Created filled_body: {filled_body}")
 
     class Populate(BaseModel):
         chain_of_thought: str = Field(
@@ -288,15 +298,21 @@ If optimal is present, that is the **optimal** you're aiming for.
 
     agent = model.with_structured_output(Populate)
 
+    logging.info(f"generate_fields: Starting attempts to populate fields")
     for attempt in range(attempts):
+        logging.info(f"generate_fields: Attempt {attempt + 1}")
         result = cast(
             Populate,
             agent.invoke(prompt.invoke({"msgs": messages})),
         )
+        logging.info(f"generate_fields: Result from agent: {result}")
         if (
             filled_body.instructions != ""
             and result.instructions != filled_body.instructions
         ) or (filled_body.optimal != "" and result.optimal != filled_body.optimal):
+            logging.info(
+                f"generate_fields: Instructions or optimal field not populated, adding messages to correct"
+            )
             messages.append(
                 AIMessage(name="populator", content=result.model_dump_json(indent=4))
             )
@@ -341,6 +357,7 @@ If optimal is present, that is the **optimal** you're aiming for.
             f"critiques: generate_fields: attempt {attempt + 1}: (instructions: {result.instructions}, optimal: {result.optimal})"
         )
 
+        logging.info(f"generate_fields: Returning filled_body: {filled_body}")
         return filled_body
 
     logging.error(
