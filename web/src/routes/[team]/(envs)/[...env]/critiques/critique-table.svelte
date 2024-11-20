@@ -86,7 +86,10 @@
 
 <Card.Root class="mx-auto h-full w-full border-surface-variant/80 bg-primary/5 text-left">
 	<Card.Header class="border-b border-surface-variant/80">
-		<Card.Title>{environment.name + tab !== '' ? ' ' + tab : ''}'s critiques</Card.Title>
+		<Card.Title>
+			{environment.name.split('/').pop() +
+				((environment.name.split('/').pop() ?? '').endsWith('s') ? "'" : "'s")} critiques
+		</Card.Title>
 	</Card.Header>
 	<Card.Content class="p-0">
 		{#if table}
