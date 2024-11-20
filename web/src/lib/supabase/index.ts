@@ -13,8 +13,6 @@ export type { Tables, Enums, Views, Functions, CompositeTypes, Json };
 type Profile = Tables<'profiles'>;
 type Team = Tables<'teams'>;
 type Environment = Tables<'environments'>;
-type Workflow = Tables<'workflows'>;
-type Agent = Tables<'agents'>;
 type Critique = Tables<'critiques'>;
 
-export type { Database, Profile, Team, Environment, Workflow, Agent, Critique };
+export type { Database, Profile, Team, Environment, Critique };

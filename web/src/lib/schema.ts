@@ -7,8 +7,7 @@ const ZodJson: z.ZodSchema<Json> = z.lazy(() =>
 
 export const critiqueSchema = z.object({
 	id: z.string(),
-	agent_name: z.string(),
-	workflow_name: z.string(),
+
 	environment_name: z.string(),
 	team_name: z.string(),
 	response: z.string(),
@@ -38,14 +37,3 @@ export const environmentSchema = z.object({
 });
 
 export type EnvironmentSchema = typeof environmentSchema;
-
-export const workflowSchema = z.object({
-	name: z
-		.string()
-		.min(2)
-		.max(50)
-		.regex(/^[^/]*$/, "Name must not contain '/'"),
-	description: z.string().min(0).max(100),
-});
-
-export type WorkflowSchema = typeof workflowSchema;

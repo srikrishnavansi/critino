@@ -10,16 +10,15 @@
 	import * as xml from '$lib/xml';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 
-	export let data;
-	$: ({ supabase, agent, critique } = data);
+	let { data } = $props();
+
+	let { supabase, environment, critique } = $derived(data);
 
 	const form = superForm(data.form.critique, {
 		dataType: 'json',
 		validators: zodClient(critiqueSchema),
 		async onSubmit() {
 			$formData.id = critique.id;
-			$formData.workflow_name = critique.workflow_name;
-			$formData.agent_name = critique.agent_name;
 			$formData.environment_name = critique.environment_name;
 			$formData.team_name = critique.team_name;
 			$formData.tags = critique.tags;
@@ -42,7 +41,7 @@
 				return;
 			}
 
-			critique = savedCritique;
+			data.critique = savedCritique;
 			toast('Saving critique...');
 		},
 		onResult() {
@@ -60,8 +59,8 @@
 		content: string;
 	};
 
-	$: conversation = xml.tryParseXmlEvents(critique.context);
-	$: query = xml.tryParseXmlEvent(critique.query);
+	let conversation = $derived(xml.tryParseXmlEvents(critique.context));
+	let query = $derived(xml.tryParseXmlEvent(critique.query));
 </script>
 
 <form
@@ -73,7 +72,7 @@
 	<div class="flex flex-col items-center justify-center gap-1 text-primary">
 		<Typography as="h1" variant="display-sm">Editing Critique</Typography>
 		<Typography class="opacity-70" variant="title-md">
-			You are critizing the {agent.name}.
+			You are critizing {environment.name}.
 		</Typography>
 	</div>
 
@@ -146,7 +145,7 @@
 				<hr class="my-8 border-primary/50" />
 
 				<Typography variant="title-md" class="mr-auto text-left text-primary">
-					Agent's Response
+					Original Response
 				</Typography>
 
 				<Typography
@@ -169,7 +168,7 @@
 				<Typography variant="title-sm" class="mr-auto pb-2 text-left text-secondary/70">
 					This is the optimal response, what the response should've been.
 					<br />
-					(can be the same if the agents answer was good)
+					(can be the same if the original answer was good)
 				</Typography>
 
 				<div class="flex justify-start">
@@ -183,8 +182,8 @@
 					Tailored Instructions
 				</Typography>
 				<Typography variant="title-sm" class="mr-auto pb-2 text-left text-secondary/70">
-					These are tailored instructions that are given to the agent when making a
-					response in a similar situation to this one.
+					These are tailored instructions that are given when making a response in a
+					similar situation to this one.
 				</Typography>
 
 				<div class="flex justify-start">

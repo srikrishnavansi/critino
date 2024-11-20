@@ -12,31 +12,31 @@
 	import * as Table from '$lib/components/ui/table';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import CritiqueTableActions from './critique-table-actions.svelte';
-	import type { Critique, Database, Environment, Workflow } from '$lib/supabase';
+	import type { Tables } from '$lib/supabase';
 	import { readable } from 'svelte/store';
-	import type { SupabaseClient } from '@supabase/supabase-js';
 	import { TipTap } from '$lib/components/ui/tiptap';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 
-	export let supabase: SupabaseClient<Database>;
-	export let environment: Environment;
-	export let workflow: Workflow;
-	export let critiques: Critique[];
-	export let agent: string;
+	type Props = {
+		environment: Tables<'environments'>;
+		critiques: Tables<'critiques'>[];
+		tab: string;
+		handleDelete: (id: string) => void;
+	};
 
-	const filteredCritiques: Critique[] = critiques.filter(
-		(critique) => critique.agent_name === agent
+	let { environment, critiques = $bindable(), tab, handleDelete }: Props = $props();
+
+	let table = $state(
+		createTable(readable(critiques), {
+			page: addPagination({ initialPageSize: 6 }),
+			sort: addSortBy(),
+			filter: addTableFilter({
+				fn: ({ filterValue, value }) => value.includes(filterValue),
+			}),
+			hiddenColumns: addHiddenColumns(),
+			selectedRows: addSelectedRows(),
+		})
 	);
-
-	let table = createTable(readable(filteredCritiques), {
-		page: addPagination({ initialPageSize: 6 }),
-		sort: addSortBy(),
-		filter: addTableFilter({
-			fn: ({ filterValue, value }) => value.includes(filterValue),
-		}),
-		hiddenColumns: addHiddenColumns(),
-		selectedRows: addSelectedRows(),
-	});
 
 	const columns = table.createColumns([
 		table.column({
@@ -44,11 +44,8 @@
 			header: 'actions',
 			cell: ({ value: id }) => {
 				return createRender(CritiqueTableActions, {
-					supabase,
 					id,
-					environment,
-					workflow,
-					critiques: filteredCritiques,
+					handleDelete,
 				});
 			},
 		}),
@@ -89,7 +86,7 @@
 
 <Card.Root class="mx-auto h-full w-full border-surface-variant/80 bg-primary/5 text-left">
 	<Card.Header class="border-b border-surface-variant/80">
-		<Card.Title>{agent}'s critiques</Card.Title>
+		<Card.Title>{environment.name + tab !== '' ? ' ' + tab : ''}'s critiques</Card.Title>
 	</Card.Header>
 	<Card.Content class="p-0">
 		{#if table}

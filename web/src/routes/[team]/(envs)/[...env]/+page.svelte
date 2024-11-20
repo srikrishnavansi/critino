@@ -15,13 +15,15 @@
 	import { sha256 } from 'js-sha256';
 	import { sluggify } from '$lib/utils';
 
-	export let data;
+	let { data } = $props();
 
-	$: ({ supabase, team, environment, environments: allEnvironments } = data);
+	let { supabase, team, environment, environments: allEnvironments } = $derived(data);
 
-	$: environments = allEnvironments.filter((env) => env.parent_name === environment.name);
+	let environments = $derived(
+		allEnvironments.filter((env) => env.parent_name === environment.name)
+	);
 
-	$: createOpen = false;
+	let createOpen = $state(false);
 
 	const form = superForm(data.form.environment, {
 		validators: zodClient(environmentSchema),
@@ -54,8 +56,8 @@
 				return;
 			}
 
-			environments = [
-				...environments,
+			data.environments = [
+				...allEnvironments,
 				{
 					name: $formData.parent_name + '/' + $formData.name,
 					parent_name: $formData.parent_name,
@@ -74,7 +76,7 @@
 
 	const { form: formData, enhance } = form;
 
-	let key: string | null = null;
+	let key: string | null = $state(null);
 
 	const genKey = () => {
 		key =
@@ -104,7 +106,7 @@
 			.eq('name', env.name)
 			.eq('team_name', env.team_name);
 
-		environments = environments.filter((e) => e.name !== env.name);
+		data.environments = allEnvironments.filter((e) => e.name !== env.name);
 
 		toast.success(`Deleted ${env.name}`);
 	}}

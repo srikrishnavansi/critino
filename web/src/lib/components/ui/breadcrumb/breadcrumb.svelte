@@ -4,17 +4,8 @@
 	import { cn } from '$lib/utils';
 	import { Separator } from '../separator';
 	import { browser } from '$app/environment';
-	import { onMount } from 'svelte';
 
 	type $$Props = Props;
-
-	let crumbs: { name: string; href: string | null }[] = [];
-
-	onMount(() => {
-		if (browser) {
-			crumbs = generateCrumbs(window.location.pathname);
-		}
-	});
 
 	const generateCrumbs = (url: string): { name: string; href: string | null }[] => {
 		const segments = url.split('/').filter((segment) => segment);
@@ -25,7 +16,11 @@
 		});
 	};
 
-	let className: $$Props['class'] = undefined;
+	let crumbs: { name: string; href: string | null }[] = $derived(
+		generateCrumbs(browser ? window.location.pathname : '')
+	);
+
+	let className: $$Props['class'] = $state(undefined);
 	export { className as class };
 </script>
 

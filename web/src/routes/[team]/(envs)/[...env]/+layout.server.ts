@@ -4,25 +4,24 @@ import { sluggify } from '$lib/utils';
 import { error, type Cookies } from '@sveltejs/kit';
 
 export const load = async ({ url, cookies, parent, params, locals: { supabase } }) => {
-	const { data: workflows, error: eWorkflows } = await supabase
-		.from('workflows')
-		.select('*')
-		.eq('team_name', params.team)
-		.eq('environment_name', params.env)
-		.order('name', { ascending: false });
+	const { team, environments } = await parent();
 
-	if (!workflows || eWorkflows) {
-		const message = `Error fetching workflows: ${JSON.stringify(eWorkflows, null, 2)}`;
-		console.error(message);
-		throw error(500, message);
-	}
-
-	const environment = (await parent()).environments.find(
-		(env) => sluggify(env.name) === sluggify(params.env)
-	);
+	const environment = environments.find((env) => sluggify(env.name) === sluggify(params.env));
 
 	if (!environment) {
-		throw error(404, `Environment not found: ${params.env}`);
+		throw error(404, `Environment not found: ${params.env} (${sluggify(params.env)})`);
+	}
+
+	const { data: critiques, error: eCritiques } = await supabase
+		.from('critiques')
+		.select('*')
+		.eq('team_name', team.name)
+		.eq('environment_name', environment.name);
+
+	if (!critiques || eCritiques) {
+		const message = `Error fetching critiques: ${JSON.stringify(eCritiques, null, 2)}`;
+		console.error(message);
+		throw error(500, message);
 	}
 
 	const getKey = (url: URL, cookies: Cookies, environment: Tables<'environments'>): string => {
@@ -75,7 +74,7 @@ export const load = async ({ url, cookies, parent, params, locals: { supabase } 
 
 	return {
 		authenticated,
-		workflows,
+		critiques,
 		environment,
 	};
 };

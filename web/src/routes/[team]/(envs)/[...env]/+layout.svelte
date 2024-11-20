@@ -2,19 +2,14 @@
 	import Nav from '$lib/components/ui/nav.svelte';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Typography } from '$lib/components/ui/typography';
-	import { sha256 } from 'js-sha256';
 	import { primaryRoutes } from './routes';
-	import { afterUpdate, onMount } from 'svelte';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Button } from '$lib/components/ui/button';
-	import { toast } from 'svelte-sonner';
 	import { Breadcrumb } from '$lib/components/ui/breadcrumb';
-	import api from '$lib/api';
-	import { goto } from '$app/navigation';
 
 	export let data;
 
-	$: ({ authenticated, team, environment, environments: allEnvironments, workflows } = data);
+	$: ({ authenticated, team, environment, environments: allEnvironments, critiques } = data);
 
 	$: environments = allEnvironments.filter((env) => env.parent_name === environment.name);
 
@@ -58,7 +53,7 @@
 			</div>
 			<Separator class="mt-0 pt-0 opacity-20" />
 
-			<Nav routes={primaryRoutes(team, environments, environment, workflows)} />
+			<Nav routes={primaryRoutes(team, environments, environment, critiques)} />
 		</div>
 
 		<Separator orientation="vertical" class="ml-0 pl-0 opacity-20" />
