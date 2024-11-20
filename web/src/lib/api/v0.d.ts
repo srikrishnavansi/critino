@@ -88,7 +88,26 @@ export interface paths {
         delete: operations["delete_environment_environments__name__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Environment */
+        patch: operations["update_environment_environments__name__patch"];
+        trace?: never;
+    };
+    "/environments/{name}/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Environment Key */
+        delete: operations["delete_environment_key_environments__name__key_delete"];
+        options?: never;
+        head?: never;
+        /** Update Environment Key */
+        patch: operations["update_environment_key_environments__name__key_patch"];
         trace?: never;
     };
     "/critiques/ids": {
@@ -146,6 +165,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** DeleteEnvironmentKeyResponse */
+        DeleteEnvironmentKeyResponse: {
+            /** Data */
+            data: Record<string, never>;
+            /** Key */
+            key: string | null;
+        };
         /** GetAuthResponse */
         GetAuthResponse: {
             /** Status */
@@ -155,6 +181,8 @@ export interface components {
         };
         /** GetCritiquesResult */
         GetCritiquesResult: {
+            /** Situation */
+            situation?: string | null;
             /** Data */
             data: components["schemas"]["StrippedCritique"][];
             /** Count */
@@ -177,16 +205,30 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** PatchEnvironmentKeyResponse */
+        PatchEnvironmentKeyResponse: {
+            /** Data */
+            data: Record<string, never>;
+            /** Key */
+            key: string | null;
+        };
+        /** PatchEnvironmentResponse */
+        PatchEnvironmentResponse: {
+            /** Data */
+            data: Record<string, never>;
+        };
         /** PostCritiquesBody */
         PostCritiquesBody: {
-            /** Context */
-            context?: string | null;
             /** Query */
             query?: string | null;
-            /** Optimal */
-            optimal?: string | null;
             /** Response */
             response?: string | null;
+            /** Context */
+            context?: string | null;
+            /** Optimal */
+            optimal?: string | null;
+            /** Instructions */
+            instructions?: string | null;
         };
         /** PostCritiquesResponse */
         PostCritiquesResponse: {
@@ -195,8 +237,8 @@ export interface components {
             /** Data */
             data: Record<string, never>;
         };
-        /** PostEnvironmentsBody */
-        PostEnvironmentsBody: {
+        /** PostEnvironmentBody */
+        PostEnvironmentBody: {
             /**
              * Description
              * @default
@@ -208,8 +250,8 @@ export interface components {
              */
             gen_key: boolean;
         };
-        /** PostEnvironmentsResponse */
-        PostEnvironmentsResponse: {
+        /** PostEnvironmentResponse */
+        PostEnvironmentResponse: {
             /** Data */
             data: Record<string, never>;
             /** Key */
@@ -223,6 +265,10 @@ export interface components {
             query: string;
             /** Optimal */
             optimal: string;
+            /** Instructions */
+            instructions: string;
+            /** Situation */
+            situation: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -298,8 +344,8 @@ export interface operations {
     authenticate_environment_auth_environment__name__get: {
         parameters: {
             query: {
-                parent_name: string | null;
                 team_name: string;
+                parent_name?: string | null;
             };
             header: {
                 "x-critino-key": string;
@@ -417,7 +463,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PostEnvironmentsBody"];
+                "application/json": components["schemas"]["PostEnvironmentBody"];
             };
         };
         responses: {
@@ -427,7 +473,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PostEnvironmentsResponse"];
+                    "application/json": components["schemas"]["PostEnvironmentResponse"];
                 };
             };
             /** @description Validation Error */
@@ -477,6 +523,118 @@ export interface operations {
             };
         };
     };
+    update_environment_environments__name__patch: {
+        parameters: {
+            query: {
+                team_name: string;
+                parent_name?: string | null;
+            };
+            header: {
+                "x-critino-key": string;
+            };
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PostEnvironmentBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchEnvironmentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_environment_key_environments__name__key_delete: {
+        parameters: {
+            query: {
+                team_name: string;
+                parent_name?: string | null;
+            };
+            header: {
+                "x-critino-key": string;
+            };
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteEnvironmentKeyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_environment_key_environments__name__key_patch: {
+        parameters: {
+            query: {
+                team_name: string;
+                parent_name?: string | null;
+            };
+            header: {
+                "x-critino-key": string;
+            };
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchEnvironmentKeyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_critique_ids_critiques_ids_get: {
         parameters: {
             query?: never;
@@ -502,13 +660,14 @@ export interface operations {
             query: {
                 team_name: string;
                 environment_name: string;
-                workflow_name?: string | null;
-                agent_name?: string | null;
+                context?: string | null;
                 query?: string | null;
                 k?: number | null;
+                similarity_key?: "query" | "situation" | "context";
             };
             header: {
                 "x-critino-key": string;
+                "x-openrouter-api-key": string | null;
             };
             path?: never;
             cookie?: never;
@@ -540,11 +699,11 @@ export interface operations {
             query: {
                 team_name: string;
                 environment_name: string;
-                workflow_name: string;
-                agent_name: string;
+                populate_missing?: boolean;
             };
             header: {
                 "x-critino-key": string;
+                "x-openrouter-api-key": string | null;
             };
             path: {
                 id: string;

@@ -9,44 +9,8 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      agents: {
-        Row: {
-          created_at: string
-          description: string
-          environment_name: string
-          name: string
-          team_name: string
-          workflow_name: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string
-          environment_name: string
-          name: string
-          team_name: string
-          workflow_name: string
-        }
-        Update: {
-          created_at?: string
-          description?: string
-          environment_name?: string
-          name?: string
-          team_name?: string
-          workflow_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "agents_workflows_project_team_fkey"
-            columns: ["team_name", "environment_name", "workflow_name"]
-            isOneToOne: false
-            referencedRelation: "workflows"
-            referencedColumns: ["team_name", "environment_name", "name"]
-          },
-        ]
-      }
       critiques: {
         Row: {
-          agent_name: string
           context: string
           created_at: string
           environment_name: string
@@ -56,12 +20,11 @@ export type Database = {
           query: string
           response: string
           situation: string
+          tab: string
           tags: string[]
           team_name: string
-          workflow_name: string
         }
         Insert: {
-          agent_name: string
           context?: string
           created_at?: string
           environment_name: string
@@ -71,12 +34,11 @@ export type Database = {
           query?: string
           response?: string
           situation?: string
+          tab?: string
           tags?: string[]
           team_name: string
-          workflow_name: string
         }
         Update: {
-          agent_name?: string
           context?: string
           created_at?: string
           environment_name?: string
@@ -86,27 +48,17 @@ export type Database = {
           query?: string
           response?: string
           situation?: string
+          tab?: string
           tags?: string[]
           team_name?: string
-          workflow_name?: string
         }
         Relationships: [
           {
-            foreignKeyName: "critiques_agents_workflows_environment_team_fkey"
-            columns: [
-              "team_name",
-              "environment_name",
-              "workflow_name",
-              "agent_name",
-            ]
+            foreignKeyName: "critiques_environment_name_team_name_fkey"
+            columns: ["environment_name", "team_name"]
             isOneToOne: false
-            referencedRelation: "agents"
-            referencedColumns: [
-              "team_name",
-              "environment_name",
-              "workflow_name",
-              "name",
-            ]
+            referencedRelation: "environments"
+            referencedColumns: ["name", "team_name"]
           },
         ]
       }
@@ -198,38 +150,6 @@ export type Database = {
           name?: string
         }
         Relationships: []
-      }
-      workflows: {
-        Row: {
-          created_at: string
-          description: string
-          environment_name: string
-          name: string
-          team_name: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string
-          environment_name: string
-          name: string
-          team_name: string
-        }
-        Update: {
-          created_at?: string
-          description?: string
-          environment_name?: string
-          name?: string
-          team_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "workflows_environment_team_fkey"
-            columns: ["team_name", "environment_name"]
-            isOneToOne: false
-            referencedRelation: "environments"
-            referencedColumns: ["team_name", "name"]
-          },
-        ]
       }
     }
     Views: {
