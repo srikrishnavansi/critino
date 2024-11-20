@@ -102,8 +102,6 @@ def get_critique_ids() -> list[str]:
 class GetCritiquesQuery(BaseModel):
     team_name: str
     environment_name: str
-    workflow_name: str | None = None
-    agent_name: str | None = None
     context: str | None = None
     query: str | None = None
     k: int | None = None
@@ -127,16 +125,6 @@ async def list_critiques(
 
     query.team_name = urllib.parse.unquote(query.team_name)
     query.environment_name = urllib.parse.unquote(query.environment_name)
-    if query.workflow_name:
-        query.workflow_name = urllib.parse.unquote(query.workflow_name)
-    if query.agent_name:
-        query.agent_name = urllib.parse.unquote(query.agent_name)
-
-    if (query.agent_name is not None) and (query.workflow_name is None):
-        raise HTTPException(
-            status_code=400,
-            detail="If you provide an agent_name, you must also provide a workflow_name",
-        )
 
     if (query.query is None and query.k is not None) or (
         query.k is None and query.query is not None
@@ -158,12 +146,6 @@ async def list_critiques(
         .eq("team_name", query.team_name)
         .eq("environment_name", query.environment_name)
     )
-
-    if query.workflow_name is not None:
-        request.eq("workflow_name", query.workflow_name)
-
-    if query.agent_name is not None:
-        request.eq("agent_name", query.agent_name)
 
     response = request.execute()
 
@@ -230,8 +212,6 @@ async def list_critiques(
 class PostCritiquesQuery(BaseModel):
     team_name: Annotated[str, AfterValidator(vd.str_empty)]
     environment_name: Annotated[str, AfterValidator(vd.str_empty)]
-    workflow_name: Annotated[str, AfterValidator(vd.str_empty)]
-    agent_name: Annotated[str, AfterValidator(vd.str_empty)]
     populate_missing: bool = False
 
 
@@ -416,30 +396,14 @@ async def upsert(
 
     query.team_name = urllib.parse.unquote(query.team_name)
     query.environment_name = urllib.parse.unquote(query.environment_name)
-    query.workflow_name = urllib.parse.unquote(query.workflow_name)
-    query.agent_name = urllib.parse.unquote(query.agent_name)
 
     try:
         (
-            supabase.table("workflows")
+            supabase.table("environments")
             .upsert(
                 {
                     "team_name": query.team_name,
-                    "environment_name": query.environment_name,
-                    "name": query.workflow_name,
-                }
-            )
-            .execute()
-        )
-
-        (
-            supabase.table("agents")
-            .upsert(
-                {
-                    "team_name": query.team_name,
-                    "environment_name": query.environment_name,
-                    "workflow_name": query.workflow_name,
-                    "name": query.agent_name,
+                    "name": query.environment_name,
                 }
             )
             .execute()
@@ -450,8 +414,6 @@ async def upsert(
                 {
                     "team_name": query.team_name,
                     "environment_name": query.environment_name,
-                    "workflow_name": query.workflow_name,
-                    "agent_name": query.agent_name,
                     "id": id,
                     **(filled_body.model_dump() if filled_body else body.model_dump()),
                 }
@@ -467,6 +429,6 @@ async def upsert(
         raise HTTPException(status_code=500, detail={**e.__dict__})
 
     return PostCritiquesResponse(
-        url=f"{get_url()}{sluggify(query.team_name)}/{sluggify(query.environment_name)}/workflows/{sluggify(query.workflow_name)}/{id}",
+        url=f"{get_url()}{sluggify(query.team_name)}/{sluggify(query.environment_name)}/critiques",
         data=critique,
     )

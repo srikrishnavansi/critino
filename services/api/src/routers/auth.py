@@ -1,4 +1,3 @@
-import os
 import urllib.parse
 from typing import Annotated
 from pydantic import AfterValidator, BaseModel
