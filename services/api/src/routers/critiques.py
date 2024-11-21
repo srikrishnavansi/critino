@@ -248,9 +248,6 @@ def generate_fields(
         body.query if body.query else ""
     )
     situation = generate_situation(model, context)
-    logging.info(
-        f"generate_fields: Successfully populated fields on attempt {attempt + 1}"
-    )
     filled_body = FilledBody(
         query=body.query,
         context=body.context,
@@ -298,7 +295,7 @@ If optimal is present, that is the **optimal** you're aiming for.
 
     agent = model.with_structured_output(Populate)
 
-    logging.info(f"generate_fields: Starting attempts to populate fields")
+    logging.info("generate_fields: Starting attempts to populate fields")
     for attempt in range(attempts):
         logging.info(f"generate_fields: Attempt {attempt + 1}")
         result = cast(
@@ -357,6 +354,9 @@ If optimal is present, that is the **optimal** you're aiming for.
             f"critiques: generate_fields: attempt {attempt + 1}: (instructions: {result.instructions}, optimal: {result.optimal})"
         )
 
+        logging.info(
+            f"generate_fields: Successfully populated fields on attempt {attempt + 1}"
+        )
         logging.info(f"generate_fields: Returning filled_body: {filled_body}")
         return filled_body
 
