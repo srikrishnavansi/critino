@@ -123,8 +123,8 @@ async def list_critiques(
 ) -> GetCritiquesResult:
     logging.info(f"list_critiques: x_critino_key: {x_critino_key} - params: {query}")
 
-    query.team_name = urllib.parse.unquote(query.team_name)
-    query.environment_name = urllib.parse.unquote(query.environment_name)
+    query.team_name = urllib.parse.unquote(query.team_name).strip()
+    query.environment_name = urllib.parse.unquote(query.environment_name).strip()
 
     if (query.query is None and query.k is not None) or (
         query.k is None and query.query is not None
@@ -378,6 +378,9 @@ async def upsert(
     logging.info(
         f"upsert: id: {id}, body: {body}, query: {query}, x_critino_key: {x_critino_key}, x_openrouter_api_key: {x_openrouter_api_key}"
     )
+    query.team_name = urllib.parse.unquote(query.team_name).strip()
+    query.environment_name = urllib.parse.unquote(query.environment_name).strip()
+
     if body.instructions is None:
         body.instructions = ""
     if body.optimal is None:
@@ -411,16 +414,14 @@ async def upsert(
         supabase, query.team_name, query.environment_name, x_critino_key
     )
 
-    query.team_name = urllib.parse.unquote(query.team_name)
-    query.environment_name = urllib.parse.unquote(query.environment_name)
-
     try:
         (
             supabase.table("environments")
             .upsert(
                 {
-                    "team_name": query.team_name,
-                    "name": query.environment_name,
+                    "team_name": query.team_name.strip(),
+                    "parent_name": query.environment_name.rsplit("/", 1)[0].strip(),
+                    "name": query.environment_name.strip(),
                 }
             )
             .execute()
@@ -429,8 +430,8 @@ async def upsert(
             supabase.table("critiques")
             .upsert(
                 {
-                    "team_name": query.team_name,
-                    "environment_name": query.environment_name,
+                    "team_name": query.team_name.strip(),
+                    "environment_name": query.environment_name.strip(),
                     "id": id,
                     **(filled_body.model_dump() if filled_body else body.model_dump()),
                 }

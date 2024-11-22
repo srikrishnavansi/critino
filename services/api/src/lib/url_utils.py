@@ -12,4 +12,4 @@ def get_url(url=None):
 
 
 def sluggify(s: str) -> str:
-    return s.lower().replace(" ", "-")
+    return s.strip().lower().replace(" ", "-")
