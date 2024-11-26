@@ -2,7 +2,9 @@ import logging
 from typing import Literal
 from langchain_core.prompts import FewShotPromptTemplate, PromptTemplate
 from langchain_core.example_selectors import SemanticSimilarityExampleSelector
-from langchain_openai import OpenAIEmbeddings
+
+# from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
 from pydantic import BaseModel, SecretStr
 import os
@@ -20,6 +22,12 @@ class StrippedCritique(BaseModel):
 
 SimilarityKey = Literal["query", "situation", "context"]
 
+embeddings = HuggingFaceBgeEmbeddings(
+    model_name="BAAI/bge-small-en-v1.5",
+    model_kwargs={"device": "cpu"},
+    encode_kwargs={"normalize_embeddings": True},
+)
+
 
 def find_relevant_critiques(
     critiques: list[StrippedCritique],
@@ -33,7 +41,7 @@ def find_relevant_critiques(
         raise ValueError("OPENAI_API_KEY is not set")
     OPENAI_API_KEY = SecretStr(OPENAI_API_KEY)
 
-    embeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
+    # embeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
 
     example_selector = SemanticSimilarityExampleSelector.from_examples(
         [critique.model_dump() for critique in critiques],
