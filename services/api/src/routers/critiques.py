@@ -66,6 +66,8 @@ def generate_situation(model: ChatOpenAI, context: str) -> str:
             description="A ~10 word description of the situation from the context and query. The situation should be generic such that it's similarly worded to others since it's used for similarity search."
         )
 
+    context = truncate_context(context)
+
     prompt = ChatPromptTemplate(
         [
             HumanMessage(
@@ -75,7 +77,7 @@ def generate_situation(model: ChatOpenAI, context: str) -> str:
 </context>
 
 Please deduce the situation from the context provided.
-        """
+                """.strip()
             ),
         ]
     )
@@ -180,6 +182,7 @@ async def list_critiques(
             llm.chat_open_router(
                 model="anthropic/claude-3-5-haiku-20241022:beta",
                 api_key=x_openrouter_api_key,
+                temperature=0.1,
             )
             if x_openrouter_api_key
             else None
@@ -234,6 +237,12 @@ class FilledBody(PostCritiquesBody):
     situation: str = ""
 
 
+def truncate_context(context: str, limit: int = 1500) -> str:
+    if len(context) > limit:
+        return "..." + context[-limit:]
+    return context
+
+
 def generate_fields(
     query: PostCritiquesQuery,
     body: PostCritiquesBody,
@@ -258,6 +267,10 @@ def generate_fields(
     )
 
     logging.info(f"generate_fields: Created filled_body: {filled_body}")
+
+    if not query.populate_missing:
+        logging.error("critiques: generate_fields: did not populate fields")
+        return filled_body
 
     class Populate(BaseModel):
         chain_of_thought: str = Field(
@@ -320,26 +333,23 @@ If optimal is present, that is the **optimal** you're aiming for.
             )
             continue
 
-        if query.populate_missing:
-            filled_body.instructions = (
-                result.instructions if result.instructions else filled_body.instructions
-            )
-            filled_body.optimal = (
-                result.optimal if result.optimal else filled_body.instructions
-            )
+        filled_body.instructions = (
+            result.instructions if result.instructions else filled_body.instructions
+        )
+        filled_body.optimal = (
+            result.optimal if result.optimal else filled_body.instructions
+        )
 
-            if filled_body.instructions == "" or filled_body.optimal == "":
-                messages.append(
-                    AIMessage(
-                        name="populator", content=result.model_dump_json(indent=4)
-                    )
+        if filled_body.instructions == "" or filled_body.optimal == "":
+            messages.append(
+                AIMessage(name="populator", content=result.model_dump_json(indent=4))
+            )
+            messages.append(
+                HumanMessage(
+                    content="You did not properly populate the missing fields. You did not populate a missing field. DO NOT CHANGE EXISTING FIELDS, THOSE ARE ALREADY PERFECT."
                 )
-                messages.append(
-                    HumanMessage(
-                        content="You did not properly populate the missing fields. You did not populate a missing field. DO NOT CHANGE EXISTING FIELDS, THOSE ARE ALREADY PERFECT."
-                    )
-                )
-                continue
+            )
+            continue
 
         filled_body = FilledBody(
             query=filled_body.query,
@@ -360,9 +370,7 @@ If optimal is present, that is the **optimal** you're aiming for.
         logging.info(f"generate_fields: Returning filled_body: {filled_body}")
         return filled_body
 
-    logging.error(
-        "critiques: generate_fields: all attempts at populating fields failed to do so appropriately"
-    )
+    logging.error("generate_fields: all attempts at populating missing failed")
     return filled_body
 
 
@@ -380,6 +388,7 @@ async def upsert(
     )
     query.team_name = urllib.parse.unquote(query.team_name).strip()
     query.environment_name = urllib.parse.unquote(query.environment_name).strip()
+    query.populate_missing = False
 
     if body.instructions is None:
         body.instructions = ""
@@ -390,6 +399,7 @@ async def upsert(
         llm.chat_open_router(
             model="anthropic/claude-3-5-haiku-20241022:beta",
             api_key=x_openrouter_api_key,
+            temperature=0.1,
         )
         if x_openrouter_api_key
         else None
