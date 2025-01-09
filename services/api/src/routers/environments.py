@@ -125,8 +125,11 @@ async def create_environment(
     query.team_name = urllib.parse.unquote(query.team_name)
     if query.parent_name:
         query.parent_name = urllib.parse.unquote(query.parent_name)
-        if query.parent_name not in name:
-            name = f"{query.parent_name}/{name}"
+
+    # "/" is used for parent hirearchy, don't allow in the passed name
+    if "/" in name:
+        raise HTTPException(400, detail={"name": "Name cannot contain '/'"})
+    name = f"{query.parent_name}/{name}"
 
     if not query.parent_name:
         auth.authenticate_team(supabase, query.team_name, x_critino_key)
@@ -207,6 +210,13 @@ async def update_environment(
         auth.authenticate_team_or_environment(
             supabase, query.team_name, query.parent_name, x_critino_key
         )
+
+    # "/" is used for parent hirearchy, don't allow in the passed name
+    if body.data["name"]:
+        if "/" in body.data["name"]:
+            raise HTTPException(400, detail={"name": "Name cannot contain '/'"})
+
+        body.data["name"] = f"{query.parent_name}/{body.data['name']}"
 
     try:
         environment = (
