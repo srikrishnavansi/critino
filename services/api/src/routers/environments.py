@@ -176,7 +176,7 @@ class PatchEnvironmentQuery(BaseModel):
 
 
 class PatchEnvironmentBody(BaseModel):
-    description: str = ""
+    data: dict = {}
 
 
 class PatchEnvironmentResponse(BaseModel):
@@ -187,8 +187,8 @@ class PatchEnvironmentResponse(BaseModel):
 @ahandle_error
 async def update_environment(
     name: Annotated[str, AfterValidator(vd.str_empty)],
-    body: PostEnvironmentBody,
-    query: Annotated[PostEnvironmentQuery, Depends(PostEnvironmentQuery)],
+    body: PatchEnvironmentBody,
+    query: Annotated[PatchEnvironmentQuery, Depends(PatchEnvironmentQuery)],
     x_critino_key: Annotated[Annotated[str, AfterValidator(vd.str_empty)], Header()],
 ) -> PatchEnvironmentResponse:
     supabase = db.client()
@@ -211,11 +211,7 @@ async def update_environment(
     try:
         environment = (
             supabase.table("environments")
-            .update(
-                {
-                    "description": body.description,
-                }
-            )
+            .update(body.data)
             .eq("team_name", query.team_name)
             .eq("parent_name", query.parent_name)
             .eq("name", name)
