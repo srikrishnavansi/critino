@@ -70,7 +70,8 @@ async def list_environments(
     supabase = db.client()
 
     query.team_name = urllib.parse.unquote(query.team_name)
-    query.environment_name = urllib.parse.unquote(query.environment_name)
+    if query.parent_name:
+        query.parent_name = urllib.parse.unquote(query.parent_name)
 
     auth.authenticate_team(supabase, query.team_name, x_critino_key)
 
@@ -124,8 +125,6 @@ async def create_environment(
     query.team_name = urllib.parse.unquote(query.team_name)
     if query.parent_name:
         query.parent_name = urllib.parse.unquote(query.parent_name)
-
-    if query.parent_name:
         if query.parent_name not in name:
             name = f"{query.parent_name}/{name}"
 
