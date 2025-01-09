@@ -70,8 +70,12 @@ async def list_environments(
     supabase = db.client()
 
     query.team_name = urllib.parse.unquote(query.team_name)
+    # "/" is used for parent hirearchy, don't allow in the passed name
+    if "/" in name:
+        raise HTTPException(400, detail={"name": "Name cannot contain '/'"})
     if query.parent_name:
         query.parent_name = urllib.parse.unquote(query.parent_name)
+        name = f"{query.parent_name}/{name}"
 
     auth.authenticate_team(supabase, query.team_name, x_critino_key)
 
@@ -123,13 +127,12 @@ async def create_environment(
     supabase = db.client()
 
     query.team_name = urllib.parse.unquote(query.team_name)
-    if query.parent_name:
-        query.parent_name = urllib.parse.unquote(query.parent_name)
-
     # "/" is used for parent hirearchy, don't allow in the passed name
     if "/" in name:
         raise HTTPException(400, detail={"name": "Name cannot contain '/'"})
-    name = f"{query.parent_name}/{name}"
+    if query.parent_name:
+        query.parent_name = urllib.parse.unquote(query.parent_name)
+        name = f"{query.parent_name}/{name}"
 
     if not query.parent_name:
         auth.authenticate_team(supabase, query.team_name, x_critino_key)
@@ -197,12 +200,13 @@ async def update_environment(
     supabase = db.client()
 
     query.team_name = urllib.parse.unquote(query.team_name)
+
+    # "/" is used for parent hirearchy, don't allow in the passed name
+    if "/" in name:
+        raise HTTPException(400, detail={"name": "Name cannot contain '/'"})
     if query.parent_name:
         query.parent_name = urllib.parse.unquote(query.parent_name)
-
-    if query.parent_name:
-        if query.parent_name not in name:
-            name = f"{query.parent_name}/{name}"
+        name = f"{query.parent_name}/{name}"
 
     if not query.parent_name:
         auth.authenticate_team(supabase, query.team_name, x_critino_key)
@@ -260,12 +264,13 @@ async def update_environment_key(
     supabase = db.client()
 
     query.team_name = urllib.parse.unquote(query.team_name)
+
+    # "/" is used for parent hirearchy, don't allow in the passed name
+    if "/" in name:
+        raise HTTPException(400, detail={"name": "Name cannot contain '/'"})
     if query.parent_name:
         query.parent_name = urllib.parse.unquote(query.parent_name)
-
-    if query.parent_name:
-        if query.parent_name not in name:
-            name = f"{query.parent_name}/{name}"
+        name = f"{query.parent_name}/{name}"
 
     if not query.parent_name:
         auth.authenticate_team(supabase, query.team_name, x_critino_key)
@@ -320,12 +325,12 @@ async def delete_environment_key(
     supabase = db.client()
 
     query.team_name = urllib.parse.unquote(query.team_name)
+    # "/" is used for parent hirearchy, don't allow in the passed name
+    if "/" in name:
+        raise HTTPException(400, detail={"name": "Name cannot contain '/'"})
     if query.parent_name:
         query.parent_name = urllib.parse.unquote(query.parent_name)
-
-    if query.parent_name:
-        if query.parent_name not in name:
-            name = f"{query.parent_name}/{name}"
+        name = f"{query.parent_name}/{name}"
 
     if not query.parent_name:
         auth.authenticate_team(supabase, query.team_name, x_critino_key)
@@ -377,12 +382,12 @@ async def read_environment(
     supabase = db.client()
 
     query.team_name = urllib.parse.unquote(query.team_name)
+    # "/" is used for parent hirearchy, don't allow in the passed name
+    if "/" in name:
+        raise HTTPException(400, detail={"name": "Name cannot contain '/'"})
     if query.parent_name:
         query.parent_name = urllib.parse.unquote(query.parent_name)
-
-    if query.parent_name:
-        if query.parent_name not in name:
-            name = f"{query.parent_name}/{name}"
+        name = f"{query.parent_name}/{name}"
 
     auth.authenticate_team_or_environment(
         supabase, query.team_name, name, x_critino_key
@@ -426,12 +431,12 @@ async def delete_environment(
     supabase = db.client()
 
     query.team_name = urllib.parse.unquote(query.team_name)
+    # "/" is used for parent hirearchy, don't allow in the passed name
+    if "/" in name:
+        raise HTTPException(400, detail={"name": "Name cannot contain '/'"})
     if query.parent_name:
         query.parent_name = urllib.parse.unquote(query.parent_name)
-
-    if query.parent_name:
-        if query.parent_name not in name:
-            name = f"{query.parent_name}/{name}"
+        name = f"{query.parent_name}/{name}"
 
     if not query.parent_name:
         auth.authenticate_team(supabase, query.team_name, x_critino_key)
