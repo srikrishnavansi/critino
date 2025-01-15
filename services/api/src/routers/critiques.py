@@ -1,8 +1,7 @@
-import json
 import traceback
 import logging
 from functools import wraps
-from typing import Annotated, Literal, cast
+from typing import Annotated, cast
 import urllib.parse
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_openai.chat_models import ChatOpenAI
@@ -12,8 +11,9 @@ from src.interfaces import db, llm
 from src.lib.url_utils import get_url, sluggify
 from supabase import PostgrestAPIError
 
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, Query
 from src.lib import auth, validators as vd
+
 
 from src.lib.few_shot import (
     SimilarityKey,
@@ -122,6 +122,7 @@ async def list_critiques(
     x_critino_key: Annotated[str, Header()],
     query: Annotated[GetCritiquesQuery, Depends(GetCritiquesQuery)],
     x_openrouter_api_key: Annotated[str | None, Header()],
+    tags: Annotated[list[str] | None, Query()] = None,
 ) -> GetCritiquesResult:
     logging.info(f"list_critiques: x_critino_key: {x_critino_key} - params: {query}")
 
@@ -148,6 +149,8 @@ async def list_critiques(
         .eq("team_name", query.team_name)
         .eq("environment_name", query.environment_name)
     )
+    if tags:
+        request = request.contains("tags", tags)
 
     response = request.execute()
 
@@ -382,6 +385,7 @@ async def upsert(
     query: Annotated[PostCritiquesQuery, Depends(PostCritiquesQuery)],
     x_critino_key: Annotated[str, Header()],
     x_openrouter_api_key: Annotated[str | None, Header()],
+    tags: Annotated[list[str] | None, Query()] = None,
 ) -> PostCritiquesResponse:
     logging.info(
         f"upsert: id: {id}, body: {body}, query: {query}, x_critino_key: {x_critino_key}, x_openrouter_api_key: {x_openrouter_api_key}"
@@ -440,9 +444,10 @@ async def upsert(
             supabase.table("critiques")
             .upsert(
                 {
+                    "id": id,
                     "team_name": query.team_name.strip(),
                     "environment_name": query.environment_name.strip(),
-                    "id": id,
+                    "tags": tags if tags else [],
                     **(filled_body.model_dump() if filled_body else body.model_dump()),
                 }
             )
