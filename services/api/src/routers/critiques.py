@@ -3,6 +3,7 @@ import logging
 from functools import wraps
 from typing import Annotated, cast
 import urllib.parse
+import uuid
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -225,7 +226,7 @@ class PostCritiquesQuery(BaseModel):
 
 class PostCritiquesBody(BaseModel):
     query: Annotated[str, AfterValidator(vd.str_empty)] | None = None
-    response: Annotated[str, AfterValidator(vd.str_empty)] | None = None
+    response: str | None = None
     context: str | None = None
     optimal: str | None = None
     instructions: str | None = None
@@ -263,7 +264,7 @@ def generate_fields(
     filled_body = FilledBody(
         query=body.query,
         context=body.context,
-        response=body.response,
+        response=body.response if body.response else "",
         optimal=body.optimal,
         instructions=body.instructions,
         situation=situation,
@@ -272,7 +273,7 @@ def generate_fields(
     logging.info(f"generate_fields: Created filled_body: {filled_body}")
 
     if not query.populate_missing:
-        logging.error("critiques: generate_fields: did not populate fields")
+        logging.info("critiques: generate_fields: did not populate fields")
         return filled_body
 
     class Populate(BaseModel):
@@ -464,4 +465,118 @@ async def upsert(
     return PostCritiquesResponse(
         url=f"{get_url()}{sluggify(query.team_name)}/{sluggify(query.environment_name)}/critiques",
         data=critique,
+    )
+
+
+class PostManyCritique(PostCritiquesBody):
+    id: Annotated[str, AfterValidator(vd.str_empty)] | None = None
+
+
+class PostManyCritiquesBody(BaseModel):
+    critiques: list[PostManyCritique]
+
+
+class PostManyCritiquesResponse(BaseModel):
+    url: str
+    data: list[dict]
+
+
+@router.post("")
+@ahandle_error
+async def upsert_many(
+    body: PostManyCritiquesBody,
+    query: Annotated[PostCritiquesQuery, Depends(PostCritiquesQuery)],
+    x_critino_key: Annotated[str, Header()],
+    x_openrouter_api_key: Annotated[str | None, Header()],
+    tags: Annotated[list[str] | None, Query()] = None,
+) -> PostManyCritiquesResponse:
+    logging.info(
+        f"upsert: id: {id}, body: {body}, query: {query}, x_critino_key: {x_critino_key}, x_openrouter_api_key: {x_openrouter_api_key}"
+    )
+    query.team_name = urllib.parse.unquote(query.team_name).strip()
+    query.environment_name = urllib.parse.unquote(query.environment_name).strip()
+    query.populate_missing = False
+
+    data = []
+    for critique in body.critiques:
+        if critique.instructions is None:
+            critique.instructions = ""
+        if critique.optimal is None:
+            critique.optimal = ""
+
+        model = (
+            llm.chat_open_router(
+                model="anthropic/claude-3-5-haiku-20241022:beta",
+                api_key=x_openrouter_api_key,
+                temperature=0.1,
+            )
+            if x_openrouter_api_key
+            else None
+        )
+
+        if (
+            critique.optimal == ""
+            and critique.instructions == ""
+            and query.populate_missing
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="both 'optimal' and 'instructions' cannot be empty when 'populate_missing' is true.",
+            )
+        if query.populate_missing and model is None:
+            raise HTTPException(
+                status_code=400,
+                detail="'populate_missing' is true but no model is available to populate the fields.",
+            )
+
+        filled_critique = generate_fields(query, critique, model) if model else None
+
+        supabase = db.client()
+
+        auth.authenticate_team_or_environment(
+            supabase, query.team_name, query.environment_name, x_critino_key
+        )
+
+        try:
+            (
+                supabase.table("environments")
+                .upsert(
+                    {
+                        "team_name": query.team_name.strip(),
+                        "parent_name": query.environment_name.rsplit("/", 1)[0].strip(),
+                        "name": query.environment_name.strip(),
+                    }
+                )
+                .execute()
+            )
+            critique = (
+                supabase.table("critiques")
+                .upsert(
+                    {
+                        "id": critique.id if critique.id else str(uuid.uuid4()),
+                        "team_name": query.team_name.strip(),
+                        "environment_name": query.environment_name.strip(),
+                        "tags": tags if tags else [],
+                        **(
+                            filled_critique.model_dump()
+                            if filled_critique
+                            else critique.model_dump()
+                        ),
+                    }
+                )
+                .execute()
+                .data[0]
+            )
+        except PostgrestAPIError as e:
+            logging.error(f"PostgrestAPIError: {e}")
+            raise HTTPException(status_code=500, detail={**e.json()})
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+            raise HTTPException(status_code=500, detail={**e.__dict__})
+
+        data.append(critique)
+
+    return PostManyCritiquesResponse(
+        url=f"{get_url()}{sluggify(query.team_name)}/{sluggify(query.environment_name)}/critiques",
+        data=data,
     )
