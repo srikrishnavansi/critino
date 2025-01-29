@@ -51,14 +51,4 @@ Critino is a cutting-edge platform designed to transform how AI systems learn fr
 
 ## **Contributing**
 
-We welcome contributions! If you’d like to contribute to Critino:
-
-- [Read the API Contribution Guide](CONTRIBUTING.md) for setup and workflows.
-- Currently you can run and contribute to the API independently from the database and frontend.
-- Frontend/database guides are in progress – stay tuned!
-
-### Please follow these steps
-
-1. Fork the repository.
-2. Create a new branch for your feature or bugfix.
-3. Submit a pull request with a detailed description of your changes.
+- [Read the Contribution Guide](CONTRIBUTING.md) for setup and workflows.
