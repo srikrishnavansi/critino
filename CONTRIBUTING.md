@@ -1,37 +1,93 @@
 # Contributing to Critino
 
-## Future Areas
+We welcome developer contributions! This guide focuses on the **API** setup.
 
 - 🚧 **Frontend (SvelteKit) & Database (Supabase)**: Contribution guides coming soon! Currently you can contribute to the API independently from the database and frontend.
 
-## Development Setup (API Focus)
+---
+
+## 🛠️ API Development
 
 ### Prerequisites
 
-- Python 3.11–3.12
-- Docker + Docker Compose
-- Nixpacks (`curl -sSL https://nixpacks.com/install.sh | bash`)
-- Poetry (`pip install poetry`)
+- **Python 3.11–3.12**
+- **Docker** and **Docker Compose**
+- [Nixpacks](https://nixpacks.com):
+
+  ```bash
+  curl -sSL https://nixpacks.com/install.sh | bash
+  ```
+
+- [Poetry](https://python-poetry.org) (Python dependency management):
+
+  ```bash
+  pip install poetry
+  ```
 
 ### First-Time Setup
 
-1. `git clone https://github.com/startino/critino`
-2. `cd services/api && poetry install`
-3. **From root**: Run `./api.sh` (_first time only_) to:
-   - Build API/web containers with Nixpacks
-   - Start Docker services
+1. Clone the repository:
 
-### Running the API
+   ```bash
+   git clone https://github.com/startino/critino
+   ```
 
-- Use `docker compose up api` for daily development
+2. Install Python dependencies:
+
+   ```bash
+   cd services/api && poetry install
+   ```
+
+3. Build and start the API (from the repo root):
+
+   ```bash
+   ./api.sh  # First time only – build api containers with Nixpacks and starts Docker services
+   ```
+
+### Running the API (from the repo root)
+
+```bash
+docker compose up api  # Use this for daily development
+```
 
 ### Workflow
 
-- Start API: `docker compose up api`
-- Format code: `./services/api/scripts/format.sh`
-- Lint code: `./services/api/scripts/lint.sh` (note: existing errors expected)
+- **Format code**:
 
-### To Add Later
+  ```bash
+  ./services/api/scripts/format.sh
+  ```
 
-- Pre-commit hooks (contributions welcome!)
-- Linter error cleanup roadmap
+- **Lint code**:
+
+  ```bash
+  ./services/api/scripts/lint.sh    # (existing errors are expected)
+  ```
+
+---
+
+## 🤝 Contribution Process
+
+1. Fork the repository and create a feature/bugfix branch.
+2. Ensure your code passes formatting/linting checks.
+3. Open a PR with:
+   - A clear description of changes
+   - Links to relevant issues (if applicable)
+
+---
+
+## 🚧 Testing & Quality
+
+- _Tests_: We’re working on a testing framework – contributions welcome!
+- _Linting_: Fix **new** lint errors only; legacy cleanup is tracked separately.
+
+---
+
+## 🔮 Future Areas
+
+- **Pre-commit hooks**: Help us automate checks!
+- **Frontend/Database guides**: WIP for SvelteKit/Supabase contributions.
+
+---
+
+🙌 Thank you for supporting Critino’s mission to improve AI feedback systems!
