@@ -25,13 +25,16 @@ Critino is a cutting-edge platform designed to transform how AI systems learn fr
 ## **How Critino Works**
 
 1. **Create Critiques**:
+
    - Define the context, query, optimal response, and situation for each critique.
    - Example: For a customer service AI, a critique might include a sample complaint, context, and the ideal empathetic response.
 
 2. **Semantic Search**:
+
    - Critino uses semantic search to match new queries with the most relevant critiques, ensuring accurate and context-aware responses.
 
 3. **Train Your AI**:
+
    - Use critiques to guide your AI’s behavior, improving alignment with user intentions over time.
 
 4. **Scale and Improve**:
@@ -48,10 +51,14 @@ Critino is a cutting-edge platform designed to transform how AI systems learn fr
 
 ## **Contributing**
 
-We welcome contributions! If you’d like to contribute to Critino, please follow these steps:
+We welcome contributions! If you’d like to contribute to Critino:
+
+- [Read the API Contribution Guide](CONTRIBUTING.md) for setup and workflows.
+- Currently you can run and contribute to the API independently from the database and frontend.
+- Frontend/database guides are in progress – stay tuned!
+
+### Please follow these steps
 
 1. Fork the repository.
 2. Create a new branch for your feature or bugfix.
 3. Submit a pull request with a detailed description of your changes.
-
-For major changes, please open an issue first to discuss the proposed changes.
