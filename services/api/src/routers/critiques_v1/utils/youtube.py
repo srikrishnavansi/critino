@@ -21,5 +21,5 @@ def get_transcript(url: str) -> list:
     except TranscriptsDisabled:
         raise ValueError("Captions are disabled for this video")
     except Exception as e:
-        raise RuntimeError(f"Transcript error: {str(e)}")
+        raise RuntimeError(f"Transcript error: {str(e)}") 
 
